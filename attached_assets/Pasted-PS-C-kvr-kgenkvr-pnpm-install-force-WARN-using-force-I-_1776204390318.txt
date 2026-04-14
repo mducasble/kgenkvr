@@ -1,0 +1,61 @@
+PS C:\kvr\kgenkvr> pnpm install --force
+ WARN  using --force I sure hope you know what you are doing
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Packages: +800
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 800, reused 781, downloaded 19, added 800, done
+node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild: Running postinstall script, done in 668ms
+node_modules/.pnpm/electron@33.4.11/node_modules/electron: Running postinstall script, done in 3.5s
+Done in 14.6s using pnpm v10.33.0
+PS C:\kvr\kgenkvr> pnpm --filter @workspace/electron-app run dev:electron
+
+> @workspace/electron-app@0.1.0 dev:electron C:\kvr\kgenkvr\artifacts\electron-app
+> concurrently "pnpm run dev:vite" "pnpm run dev:electron:proc"
+
+[1]
+[1] > @workspace/electron-app@0.1.0 dev:electron:proc C:\kvr\kgenkvr\artifacts\electron-app
+[1] > wait-on tcp:5173 && tsc -p tsconfig.main.json --noEmit false && electron dist/main/main.js
+[1]
+[0]
+[0] > @workspace/electron-app@0.1.0 dev:vite C:\kvr\kgenkvr\artifacts\electron-app
+[0] > vite --config vite.renderer.config.ts
+[0]
+[0] C:\kvr\kgenkvr\node_modules\.pnpm\rollup@4.59.0\node_modules\rollup\dist\native.js:115
+[0]             throw new Error(
+[0]                   ^
+[0]
+[0] Error: Cannot find module @rollup/rollup-win32-x64-msvc. npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). Please try `npm i` again after removing both package-lock.json and node_modules directory.
+[0]     at requireWithFriendlyError (C:\kvr\kgenkvr\node_modules\.pnpm\rollup@4.59.0\node_modules\rollup\dist\native.js:115:9)
+[0]     at Object.<anonymous> (C:\kvr\kgenkvr\node_modules\.pnpm\rollup@4.59.0\node_modules\rollup\dist\native.js:124:76)
+[0]     at Module._compile (node:internal/modules/cjs/loader:1761:14)
+[0]     at Object..js (node:internal/modules/cjs/loader:1893:10)
+[0]     at Module.load (node:internal/modules/cjs/loader:1481:32)
+[0]     at Module._load (node:internal/modules/cjs/loader:1300:12)
+[0]     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+[0]     at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+[0]     at loadCJSModuleWithModuleLoad (node:internal/modules/esm/translators:339:3)
+[0]     at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:242:7) {
+[0]   [cause]: Error: Cannot find module '@rollup/rollup-win32-x64-msvc'
+[0]   Require stack:
+[0]   - C:\kvr\kgenkvr\node_modules\.pnpm\rollup@4.59.0\node_modules\rollup\dist\native.js
+[0]       at Module._resolveFilename (node:internal/modules/cjs/loader:1421:15)
+[0]       at defaultResolveImpl (node:internal/modules/cjs/loader:1059:19)
+[0]       at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1064:22)
+[0]       at Module._load (node:internal/modules/cjs/loader:1227:37)
+[0]       at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+[0]       at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+[0]       at Module.require (node:internal/modules/cjs/loader:1504:12)
+[0]       at require (node:internal/modules/helpers:152:16)
+[0]       at requireWithFriendlyError (C:\kvr\kgenkvr\node_modules\.pnpm\rollup@4.59.0\node_modules\rollup\dist\native.js:97:10)
+[0]       at Object.<anonymous> (C:\kvr\kgenkvr\node_modules\.pnpm\rollup@4.59.0\node_modules\rollup\dist\native.js:124:76) {
+[0]     code: 'MODULE_NOT_FOUND',
+[0]     requireStack: [
+[0]       'C:\\kvr\\kgenkvr\\node_modules\\.pnpm\\rollup@4.59.0\\node_modules\\rollup\\dist\\native.js'
+[0]     ]
+[0]   }
+[0] }
+[0]
+[0] Node.js v24.13.0
+[0]  ELIFECYCLE  Command failed with exit code 1.
+[0] pnpm run dev:vite exited with code 1
