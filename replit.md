@@ -16,6 +16,34 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 
+## Artifacts
+
+### `artifacts/electron-app` — Desktop Recording App
+Electron + React + TypeScript + Vite desktop application scaffold.
+
+**Architecture:**
+- `src/main/` — Electron main process: BrowserWindow, IPC handlers, Node.js services
+- `src/preload/` — contextBridge exposing `window.electronAPI` to renderer
+- `src/renderer/` — React app with Vite, React Router, Zustand
+- `src/shared/` — Types and IPC channel constants shared across processes
+
+**Pages:** LoginPage → LobbyPage → SessionSetupPage → RecordingPage → ReviewPage
+
+**Services (placeholder, needs implementation):**
+- `DailyService` — Daily.co room creation REST API (main process)
+- `DailyClientService` — Daily.co call object/iframe (renderer)
+- `RecordingService` — Recording lifecycle coordinator (main process)
+- `RecordingClientService` — MediaRecorder wrapper (renderer)
+- `FfmpegService` — FFmpeg post-processing subprocess (main process)
+- `ElevenLabsService` — Speech-to-text via ElevenLabs API (main process)
+- `UploadQueueService` — Persistent upload queue with retry (main process)
+
+**Key commands (electron-app):**
+- `pnpm --filter @workspace/electron-app run dev` — dev mode (Vite + Electron)
+- `pnpm --filter @workspace/electron-app run build` — build all
+- `pnpm --filter @workspace/electron-app run pack:mac` — package for macOS
+- `pnpm --filter @workspace/electron-app run pack:win` — package for Windows
+
 ## Key Commands
 
 - `pnpm run typecheck` — full typecheck across all packages

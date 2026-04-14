@@ -1,0 +1,67 @@
+{
+  "name": "@workspace/electron-app",
+  "version": "0.1.0",
+  "description": "Desktop recording app with Daily.co, FFmpeg, and ElevenLabs",
+  "main": "dist/main/main.js",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm run dev:vite\" \"pnpm run dev:electron\"",
+    "dev:vite": "vite --config vite.renderer.config.ts",
+    "dev:electron": "wait-on tcp:5173 && tsc -p tsconfig.main.json --noEmit false --outDir dist/main && electron dist/main/main.js",
+    "build": "pnpm run build:renderer && pnpm run build:main && pnpm run build:preload",
+    "build:renderer": "vite build --config vite.renderer.config.ts",
+    "build:main": "tsc -p tsconfig.main.json --noEmit false",
+    "build:preload": "tsc -p tsconfig.preload.json --noEmit false",
+    "typecheck": "tsc --noEmit",
+    "pack:mac": "electron-builder --mac",
+    "pack:win": "electron-builder --win",
+    "pack:all": "electron-builder --mac --win"
+  },
+  "dependencies": {
+    "electron-log": "^5.2.0",
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "typescript": "~5.9.2",
+    "vite": "^6.0.0",
+    "wait-on": "^8.0.0",
+    "zustand": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.recordingapp",
+    "productName": "RecordingApp",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.utilities",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "AudioVideo"
+    }
+  }
+}

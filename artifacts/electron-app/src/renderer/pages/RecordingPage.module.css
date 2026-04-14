@@ -1,0 +1,229 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  transition: color 0.15s;
+}
+
+.backButton:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.backButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sessionId {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.sessionId span {
+  font-family: monospace;
+  color: var(--color-text);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.videoArea {
+  flex: 1;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.videoPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+}
+
+.videoPlaceholderIcon {
+  font-size: 40px;
+}
+
+.videoPlaceholderText {
+  font-size: 14px;
+  color: #fff;
+}
+
+.videoPlaceholderHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: monospace;
+}
+
+.controls {
+  flex-shrink: 0;
+  padding: 20px 32px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.indicator_recording {
+  background: var(--color-accent);
+  animation: pulse 1s infinite;
+}
+
+.indicator_paused {
+  background: var(--color-warning);
+}
+
+.indicator_processing,
+.indicator_stopping {
+  background: var(--color-warning);
+  animation: pulse 0.5s infinite;
+}
+
+.indicator_error {
+  background: var(--color-error);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.statusLabel {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.timer {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--color-accent);
+  margin-left: auto;
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-error);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.button {
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  transition: all 0.15s;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.recordButton {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.recordButton:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.pauseButton {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.pauseButton:hover:not(:disabled) {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.resumeButton {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.stopButton {
+  background: var(--color-surface-2);
+  color: var(--color-error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stopButton:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--color-error);
+}
+
+.processingState {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.recordingInfo {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.infoLabel {
+  color: var(--color-text-muted);
+}
+
+.infoValue {
+  color: var(--color-text);
+}
