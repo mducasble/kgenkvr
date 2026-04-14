@@ -7,7 +7,7 @@ import type { SessionConfig } from "../../shared/types";
 import styles from "./SessionSetupPage.module.css";
 
 const DEFAULT_CONFIG: Omit<SessionConfig, "title" | "description"> = {
-  maxParticipants: 8,
+  maxParticipants: 2,
   recordingEnabled: true,
   transcriptionEnabled: true,
   autoUpload: false,
@@ -21,6 +21,7 @@ export function SessionSetupPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [dailyRoomUrl, setDailyRoomUrl] = useState("");
   const [config, setConfig] = useState(DEFAULT_CONFIG);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -31,13 +32,27 @@ export function SessionSetupPage() {
       const result = await api.session.create({
         title,
         description: description || undefined,
-        config,
+        config: {
+          ...config,
+          dailyRoomUrl: dailyRoomUrl.trim() || undefined,
+        },
       });
       if (!result.success || !result.data) {
         throw new Error(result.error ?? "Failed to create session");
       }
       addSession(result.data);
       setActiveSession(result.data);
+
+      // Join immediately
+      const joinRes = await api.session.join({
+        sessionId: result.data.id,
+        roomUrl: dailyRoomUrl.trim() || undefined,
+        displayName: "You",
+      });
+      if (joinRes.success && joinRes.data) {
+        setActiveSession(joinRes.data);
+      }
+
       navigate(ROUTES.RECORDING.replace(":sessionId", result.data.id));
     } catch (err) {
       setError((err as Error).message);
@@ -46,7 +61,7 @@ export function SessionSetupPage() {
     }
   };
 
-  const toggleConfig = (key: keyof typeof config) => {
+  const toggleBool = (key: keyof typeof config) => {
     setConfig((prev) => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
   };
 
@@ -61,6 +76,7 @@ export function SessionSetupPage() {
 
       <main className={styles.main}>
         <form className={styles.form} onSubmit={handleSubmit}>
+          {/* Details */}
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Session Details</h2>
 
@@ -74,7 +90,7 @@ export function SessionSetupPage() {
                 className={styles.input}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Product Review Session"
+                placeholder="e.g. Product Interview #4"
                 required
                 autoFocus
               />
@@ -89,61 +105,62 @@ export function SessionSetupPage() {
                 className={styles.textarea}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional notes about this session..."
-                rows={3}
+                placeholder="Optional notes..."
+                rows={2}
               />
             </div>
           </section>
 
+          {/* Daily.co */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Daily.co Room (optional)</h2>
+            <p className={styles.sectionHint}>
+              Paste a Daily.co room URL to embed the live call. Leave blank for local-only recording.
+            </p>
+            <div className={styles.field}>
+              <label htmlFor="dailyUrl" className={styles.label}>
+                Room URL
+              </label>
+              <input
+                id="dailyUrl"
+                type="url"
+                className={styles.input}
+                value={dailyRoomUrl}
+                onChange={(e) => setDailyRoomUrl(e.target.value)}
+                placeholder="https://yourteam.daily.co/room-name"
+              />
+            </div>
+          </section>
+
+          {/* Options */}
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Recording Options</h2>
 
             <div className={styles.toggleList}>
               <label className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
-                  <span className={styles.toggleLabel}>Enable Recording</span>
-                  <span className={styles.toggleDesc}>
-                    Record audio and video locally
-                  </span>
+                  <span className={styles.toggleLabel}>Local Recording</span>
+                  <span className={styles.toggleDesc}>Save audio+video to disk during the session</span>
                 </div>
-                <input
-                  type="checkbox"
-                  className={styles.toggleInput}
-                  checked={config.recordingEnabled}
-                  onChange={() => toggleConfig("recordingEnabled")}
-                />
+                <input type="checkbox" className={styles.toggleInput} checked={config.recordingEnabled} onChange={() => toggleBool("recordingEnabled")} />
                 <div className={`${styles.toggle} ${config.recordingEnabled ? styles.toggleOn : ""}`} />
               </label>
 
               <label className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
                   <span className={styles.toggleLabel}>Transcription</span>
-                  <span className={styles.toggleDesc}>
-                    Auto-transcribe via ElevenLabs after recording
-                  </span>
+                  <span className={styles.toggleDesc}>Auto-transcribe local audio after recording</span>
                 </div>
-                <input
-                  type="checkbox"
-                  className={styles.toggleInput}
-                  checked={config.transcriptionEnabled}
-                  onChange={() => toggleConfig("transcriptionEnabled")}
-                />
+                <input type="checkbox" className={styles.toggleInput} checked={config.transcriptionEnabled} onChange={() => toggleBool("transcriptionEnabled")} />
                 <div className={`${styles.toggle} ${config.transcriptionEnabled ? styles.toggleOn : ""}`} />
               </label>
 
               <label className={styles.toggleItem}>
                 <div className={styles.toggleInfo}>
                   <span className={styles.toggleLabel}>Auto Upload</span>
-                  <span className={styles.toggleDesc}>
-                    Upload recording automatically when finished
-                  </span>
+                  <span className={styles.toggleDesc}>Enqueue file for upload when recording stops</span>
                 </div>
-                <input
-                  type="checkbox"
-                  className={styles.toggleInput}
-                  checked={config.autoUpload}
-                  onChange={() => toggleConfig("autoUpload")}
-                />
+                <input type="checkbox" className={styles.toggleInput} checked={config.autoUpload} onChange={() => toggleBool("autoUpload")} />
                 <div className={`${styles.toggle} ${config.autoUpload ? styles.toggleOn : ""}`} />
               </label>
             </div>
@@ -152,19 +169,11 @@ export function SessionSetupPage() {
           {error && <p className={styles.error}>{error}</p>}
 
           <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={() => navigate(ROUTES.LOBBY)}
-            >
+            <button type="button" className={styles.cancelButton} onClick={() => navigate(ROUTES.LOBBY)}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isLoading || !title.trim()}
-            >
-              {isLoading ? "Creating..." : "Create & Join Session"}
+            <button type="submit" className={styles.submitButton} disabled={isLoading || !title.trim()}>
+              {isLoading ? "Creating..." : "Start Session"}
             </button>
           </div>
         </form>

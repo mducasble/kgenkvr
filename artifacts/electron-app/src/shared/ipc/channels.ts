@@ -10,6 +10,9 @@ export const IPC_CHANNELS = {
     LEAVE: "session:leave",
     LIST: "session:list",
     GET: "session:get",
+    SAVE: "session:save",
+    LOAD_ALL: "session:load-all",
+    DELETE: "session:delete",
   },
   RECORDING: {
     START: "recording:start",
@@ -19,6 +22,8 @@ export const IPC_CHANNELS = {
     GET_STATUS: "recording:get-status",
     LIST_LOCAL: "recording:list-local",
     DELETE_LOCAL: "recording:delete-local",
+    WRITE_CHUNK: "recording:write-chunk",
+    FINALIZE: "recording:finalize",
   },
   UPLOAD: {
     ENQUEUE: "upload:enqueue",
@@ -35,6 +40,7 @@ export const IPC_CHANNELS = {
     START: "transcription:start",
     GET_STATUS: "transcription:get-status",
     GET_RESULT: "transcription:get-result",
+    SAVE: "transcription:save",
   },
   SYSTEM: {
     GET_APP_VERSION: "system:get-app-version",
@@ -42,6 +48,7 @@ export const IPC_CHANNELS = {
     OPEN_EXTERNAL: "system:open-external",
     SHOW_SAVE_DIALOG: "system:show-save-dialog",
     SHOW_OPEN_DIALOG: "system:show-open-dialog",
+    GET_USER_DATA_PATH: "system:get-user-data-path",
   },
 } as const;
 
@@ -53,3 +60,10 @@ export type IpcChannel =
   | (typeof IPC_CHANNELS.FFMPEG)[keyof typeof IPC_CHANNELS.FFMPEG]
   | (typeof IPC_CHANNELS.TRANSCRIPTION)[keyof typeof IPC_CHANNELS.TRANSCRIPTION]
   | (typeof IPC_CHANNELS.SYSTEM)[keyof typeof IPC_CHANNELS.SYSTEM];
+
+export const IPC_EVENTS = {
+  UPLOAD_PROGRESS: "upload:progress",
+  FFMPEG_PROGRESS: "ffmpeg:progress",
+  TRANSCRIPTION_PROGRESS: "transcription:progress",
+  RECORDING_CHUNK_WRITTEN: "recording:chunk-written",
+} as const;

@@ -23,7 +23,7 @@ interface SessionStore {
   setError: (error: string | null) => void;
 }
 
-export const useSessionStore = create<SessionStore>((set, get) => ({
+export const useSessionStore = create<SessionStore>((set, _get) => ({
   sessions: [],
   activeSession: null,
   isLoading: false,

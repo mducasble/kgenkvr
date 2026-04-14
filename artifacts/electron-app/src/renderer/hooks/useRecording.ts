@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useRecordingStore } from "../stores/recordingStore";
 import { useElectronAPI } from "./useElectronAPI";
+import { recordingClientService } from "../services/RecordingClientService";
 import type { RecordingConfig } from "../../shared/types";
 
 export function useRecording() {
   const store = useRecordingStore();
   const api = useElectronAPI();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingIdRef = useRef<string | null>(null);
 
   const startTimer = useCallback(() => {
+    store.setElapsedSeconds(0);
     timerRef.current = setInterval(() => {
       store.incrementElapsed();
     }, 1000);
@@ -30,13 +33,39 @@ export function useRecording() {
       store.setLoading(true);
       store.setError(null);
       store.setRecordingStatus("starting");
+
       try {
-        const result = await api.recording.start({ config, sessionId });
-        if (!result.success || !result.data) {
-          throw new Error(result.error ?? "Failed to start recording");
+        // 1. Tell main process to prepare a recording slot
+        const initResult = await api.recording.start({
+          config,
+          sessionId,
+        });
+        if (!initResult.success || !initResult.data) {
+          throw new Error(initResult.error ?? "Failed to initialize recording");
         }
-        store.setActiveRecording(result.data);
-        store.setElapsedSeconds(0);
+
+        const recordingId = initResult.data.id;
+        recordingIdRef.current = recordingId;
+        store.setActiveRecording(initResult.data);
+
+        // 2. Start browser-side MediaRecorder
+        await recordingClientService.startCapture(
+          {
+            mode: "camera",
+            videoEnabled: config.videoEnabled,
+            audioEnabled: config.audioEnabled,
+          },
+          async (chunk: ArrayBuffer) => {
+            // Send each chunk to main process to write to disk
+            await api.recording.writeChunk(recordingId, chunk);
+          },
+          (state) => {
+            if (state === "recording") store.setRecordingStatus("recording");
+            else if (state === "paused") store.setRecordingStatus("paused");
+          }
+        );
+
+        store.setRecordingStatus("recording");
         startTimer();
       } catch (err) {
         store.setRecordingStatus("error");
@@ -50,16 +79,25 @@ export function useRecording() {
   );
 
   const stopRecording = useCallback(async () => {
-    if (!store.activeRecording) return;
+    const recordingId = recordingIdRef.current;
+    if (!recordingId) return;
+
     store.setLoading(true);
     store.setRecordingStatus("stopping");
     stopTimer();
+
     try {
-      const result = await api.recording.stop(store.activeRecording.id);
+      // 1. Stop MediaRecorder (flushes final chunk)
+      await recordingClientService.stop();
+
+      // 2. Tell main to close the file stream
+      const result = await api.recording.stop(recordingId);
       if (!result.success || !result.data) {
         throw new Error(result.error ?? "Failed to stop recording");
       }
+
       store.setRecordingStatus("processing");
+      recordingIdRef.current = null;
       return result.data;
     } catch (err) {
       store.setRecordingStatus("error");
@@ -71,15 +109,23 @@ export function useRecording() {
   }, [api, store, stopTimer]);
 
   const pauseRecording = useCallback(async () => {
-    if (!store.activeRecording) return;
-    const result = await api.recording.pause(store.activeRecording.id);
-    if (result.success) store.setRecordingStatus("paused");
-    stopTimer();
+    const recordingId = recordingIdRef.current;
+    if (!recordingId) return;
+
+    recordingClientService.pause();
+    const result = await api.recording.pause(recordingId);
+    if (result.success) {
+      store.setRecordingStatus("paused");
+      stopTimer();
+    }
   }, [api, store, stopTimer]);
 
   const resumeRecording = useCallback(async () => {
-    if (!store.activeRecording) return;
-    const result = await api.recording.resume(store.activeRecording.id);
+    const recordingId = recordingIdRef.current;
+    if (!recordingId) return;
+
+    recordingClientService.resume();
+    const result = await api.recording.resume(recordingId);
     if (result.success) {
       store.setRecordingStatus("recording");
       startTimer();
@@ -96,5 +142,6 @@ export function useRecording() {
     stopRecording,
     pauseRecording,
     resumeRecording,
+    localStream: recordingClientService.getStream(),
   };
 }

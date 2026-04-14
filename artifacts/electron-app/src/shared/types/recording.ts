@@ -40,7 +40,8 @@ export interface LocalRecording {
   totalDurationSeconds?: number;
   totalFileSizeBytes?: number;
   outputFilePath?: string;
-  startedAt: string;
+  audioFilePath?: string;
+  startedAt?: string;
   endedAt?: string;
   createdAt: string;
 }

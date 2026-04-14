@@ -1,121 +1,137 @@
-import { spawn, ChildProcess } from "child_process";
+import fs from "fs";
 import path from "path";
 import log from "electron-log";
 import type { FfmpegJob, FfmpegJobConfig } from "../../shared/types";
 
 /**
- * FfmpegService — wraps ffmpeg subprocess for post-processing recordings.
+ * FfmpegService — post-processing wrapper.
  *
- * TODO: Install and configure ffmpeg-static or fluent-ffmpeg.
- * Recommended: use `ffmpeg-static` for bundled binary.
+ * STUB IMPLEMENTATION for prototype. The stub:
+ *   - "concat" operation: verifies input files exist, resolves immediately
+ *   - "extract-audio": copies the source file as audio output (same container)
+ *   - All other operations: resolve immediately with no-op
  *
- * Install:
- *   pnpm add ffmpeg-static
- *   pnpm add -D @types/ffmpeg-static
- *
- * Supported operations (see FfmpegOperation type):
- *   - concat: Join multiple segments into a single output file
- *   - transcode: Re-encode to different format/codec/quality
- *   - extract-audio: Strip audio track to separate file (for transcription)
- *   - compress: Reduce file size
- *   - thumbnail: Extract a single frame as image
- *   - trim: Cut a specific time range
+ * For real integration, replace processJob() bodies with actual ffmpeg-static calls.
+ * Install: pnpm add ffmpeg-static && pnpm add -D @types/ffmpeg-static
  */
 export class FfmpegService {
-  private activeJobs = new Map<string, { job: FfmpegJob; process: ChildProcess }>();
-  private ffmpegPath: string;
-
-  constructor() {
-    // TODO: Use ffmpeg-static for bundled binary
-    // import ffmpegPath from "ffmpeg-static";
-    // this.ffmpegPath = ffmpegPath!;
-    this.ffmpegPath = "ffmpeg"; // fallback to system ffmpeg
-  }
+  private jobs = new Map<string, FfmpegJob>();
 
   async processJob(config: FfmpegJobConfig, jobId: string): Promise<FfmpegJob> {
-    log.info("FfmpegService.processJob", { jobId, operation: config.operation });
+    log.info("FfmpegService.processJob (stub)", { jobId, operation: config.operation });
 
     const job: FfmpegJob = {
       id: jobId,
       config,
-      status: "pending",
+      status: "running",
       progress: 0,
       createdAt: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
     };
+    this.jobs.set(jobId, job);
 
-    // TODO: Build ffmpeg args based on operation type
-    const args = this.buildArgs(config);
+    try {
+      await this.runStubOperation(config, job);
+      job.status = "completed";
+      job.progress = 100;
+      job.outputPath = config.outputPath;
+      job.completedAt = new Date().toISOString();
+      log.info("FfmpegService: job completed (stub)", jobId);
+    } catch (err) {
+      job.status = "failed";
+      job.error = (err as Error).message;
+      log.error("FfmpegService: job failed", jobId, err);
+    }
 
-    return new Promise((resolve, reject) => {
-      const process = spawn(this.ffmpegPath, args);
+    this.jobs.set(jobId, job);
+    return job;
+  }
 
-      job.status = "running";
-      job.startedAt = new Date().toISOString();
-      this.activeJobs.set(jobId, { job, process });
-
-      process.stderr.on("data", (data: Buffer) => {
-        // TODO: Parse ffmpeg progress output to update job.progress
-        // ffmpeg outputs progress to stderr with "time=HH:MM:SS.ms" format
-        log.debug("ffmpeg stderr:", data.toString());
-      });
-
-      process.on("close", (code) => {
-        this.activeJobs.delete(jobId);
-        if (code === 0) {
-          job.status = "completed";
-          job.progress = 100;
-          job.completedAt = new Date().toISOString();
-          job.outputPath = config.outputPath;
-          resolve(job);
-        } else {
-          job.status = "failed";
-          job.error = `ffmpeg exited with code ${code}`;
-          reject(new Error(job.error));
+  private async runStubOperation(config: FfmpegJobConfig, job: FfmpegJob): Promise<void> {
+    switch (config.operation) {
+      case "concat": {
+        // Validate inputs exist
+        for (const inputPath of config.inputPaths) {
+          if (!fs.existsSync(inputPath)) {
+            throw new Error(`Input file not found: ${inputPath}`);
+          }
         }
-      });
+        // STUB: copy first input to output (no real concatenation)
+        if (config.inputPaths.length > 0 && config.inputPaths[0] !== config.outputPath) {
+          fs.copyFileSync(config.inputPaths[0], config.outputPath);
+        }
+        await this.fakeProgress(job, 1500);
+        break;
+      }
 
-      process.on("error", (error) => {
-        job.status = "failed";
-        job.error = error.message;
-        this.activeJobs.delete(jobId);
-        reject(error);
-      });
+      case "extract-audio": {
+        const inputPath = config.inputPaths[0];
+        if (!inputPath || !fs.existsSync(inputPath)) {
+          throw new Error(`Input file not found: ${inputPath}`);
+        }
+        // STUB: copy recording file as "audio" file (same container, different path)
+        const ext = path.extname(inputPath);
+        const audioOut = config.outputPath.endsWith(ext)
+          ? config.outputPath
+          : config.outputPath.replace(/\.[^.]+$/, ext);
+        fs.copyFileSync(inputPath, audioOut);
+        // Update outputPath to the actual extension used
+        config.outputPath = audioOut;
+        await this.fakeProgress(job, 800);
+        break;
+      }
+
+      case "transcode":
+      case "compress":
+        if (config.inputPaths[0] && fs.existsSync(config.inputPaths[0])) {
+          fs.copyFileSync(config.inputPaths[0], config.outputPath);
+        }
+        await this.fakeProgress(job, 2000);
+        break;
+
+      case "thumbnail":
+        // STUB: write a tiny placeholder file
+        fs.writeFileSync(config.outputPath, "THUMBNAIL_STUB");
+        await this.fakeProgress(job, 300);
+        break;
+
+      case "trim":
+        if (config.inputPaths[0] && fs.existsSync(config.inputPaths[0])) {
+          fs.copyFileSync(config.inputPaths[0], config.outputPath);
+        }
+        await this.fakeProgress(job, 1000);
+        break;
+
+      default:
+        await this.fakeProgress(job, 500);
+    }
+  }
+
+  private fakeProgress(job: FfmpegJob, durationMs: number): Promise<void> {
+    return new Promise((resolve) => {
+      const steps = 10;
+      const interval = durationMs / steps;
+      let step = 0;
+      const timer = setInterval(() => {
+        step++;
+        job.progress = Math.min(95, (step / steps) * 100);
+        if (step >= steps) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, interval);
     });
   }
 
-  private buildArgs(config: FfmpegJobConfig): string[] {
-    // TODO: Implement arg building for each operation type
-    switch (config.operation) {
-      case "concat":
-        // Use concat demuxer for lossless joining
-        // return ["-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", config.outputPath]
-        break;
-      case "transcode":
-        break;
-      case "extract-audio":
-        // return ["-i", config.inputPaths[0], "-vn", "-acodec", "pcm_s16le", config.outputPath]
-        break;
-      case "compress":
-        break;
-      case "thumbnail":
-        break;
-      case "trim":
-        break;
-    }
-    throw new Error(`FfmpegService: operation "${config.operation}" not implemented`);
-  }
-
   cancelJob(jobId: string): void {
-    const entry = this.activeJobs.get(jobId);
-    if (entry) {
-      entry.process.kill("SIGTERM");
-      entry.job.status = "cancelled";
-      this.activeJobs.delete(jobId);
+    const job = this.jobs.get(jobId);
+    if (job && job.status === "running") {
+      job.status = "cancelled";
       log.info("FfmpegService: cancelled job", jobId);
     }
   }
 
   getJob(jobId: string): FfmpegJob | undefined {
-    return this.activeJobs.get(jobId)?.job;
+    return this.jobs.get(jobId);
   }
 }

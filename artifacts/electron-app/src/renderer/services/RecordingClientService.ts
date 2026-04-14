@@ -1,113 +1,172 @@
 /**
- * RecordingClientService — manages browser-side MediaRecorder.
+ * RecordingClientService — browser-side MediaRecorder wrapper.
  *
- * Runs in the renderer process where browser media APIs are available.
- * Captured chunks are sent to main process via IPC for disk writes.
+ * Captures audio+video from the user's camera/mic and delivers chunks
+ * to the main process via the IPC bridge for disk writing.
  *
- * TODO: Wire up chunk delivery to main process via window.electronAPI
- *
- * MDN: https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder
+ * Chunk interval: 3 seconds — balances disk write frequency and data safety.
+ * On stop(), any remaining data is flushed before the Promise resolves.
  */
 
-export type MediaRecorderState = "inactive" | "recording" | "paused";
+export type CaptureMode = "camera" | "screen" | "audio-only";
 
-export interface RecordingClientConfig {
+export interface CaptureOptions {
+  mode: CaptureMode;
   videoEnabled: boolean;
   audioEnabled: boolean;
-  screenCaptureEnabled: boolean;
-  mimeType?: string;
-  videoBitsPerSecond?: number;
-  audioBitsPerSecond?: number;
   chunkIntervalMs?: number;
 }
+
+type ChunkCallback = (chunk: ArrayBuffer) => void;
+type StateChangeCallback = (state: MediaRecorder["state"]) => void;
 
 export class RecordingClientService {
   private mediaRecorder: MediaRecorder | null = null;
   private stream: MediaStream | null = null;
-  private chunks: Blob[] = [];
-  private onChunk?: (chunk: Blob) => void;
+  private onChunk?: ChunkCallback;
+  private onStateChange?: StateChangeCallback;
+  private pendingStop?: () => void;
 
   async startCapture(
-    config: RecordingClientConfig,
-    onChunk?: (chunk: Blob) => void
+    options: CaptureOptions,
+    onChunk: ChunkCallback,
+    onStateChange?: StateChangeCallback
   ): Promise<void> {
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+      throw new Error("A capture is already active");
+    }
+
     this.onChunk = onChunk;
+    this.onStateChange = onStateChange;
 
-    // TODO: Request permissions and build composite MediaStream
-    // const streams: MediaStream[] = [];
-    //
-    // if (config.screenCaptureEnabled) {
-    //   const screenStream = await navigator.mediaDevices.getDisplayMedia({
-    //     video: true,
-    //     audio: true,
-    //   });
-    //   streams.push(screenStream);
-    // }
-    //
-    // if (config.videoEnabled || config.audioEnabled) {
-    //   const cameraStream = await navigator.mediaDevices.getUserMedia({
-    //     video: config.videoEnabled,
-    //     audio: config.audioEnabled,
-    //   });
-    //   streams.push(cameraStream);
-    // }
-    //
-    // this.stream = mergeStreams(streams); // Use AudioContext + canvas for composite
-    //
-    // const mimeType = config.mimeType ?? this.getBestMimeType();
-    // this.mediaRecorder = new MediaRecorder(this.stream, {
-    //   mimeType,
-    //   videoBitsPerSecond: config.videoBitsPerSecond ?? 2_500_000,
-    //   audioBitsPerSecond: config.audioBitsPerSecond ?? 128_000,
-    // });
-    //
-    // this.mediaRecorder.ondataavailable = (event) => {
-    //   if (event.data.size > 0) {
-    //     this.chunks.push(event.data);
-    //     this.onChunk?.(event.data);
-    //   }
-    // };
-    //
-    // this.mediaRecorder.start(config.chunkIntervalMs ?? 5000);
+    const stream = await this.buildStream(options);
+    this.stream = stream;
 
-    throw new Error("RecordingClientService.startCapture not implemented");
+    const mimeType = this.getBestMimeType(options.videoEnabled);
+    const recorderOptions: MediaRecorderOptions = {
+      mimeType,
+      audioBitsPerSecond: 128_000,
+    };
+    if (options.videoEnabled) {
+      recorderOptions.videoBitsPerSecond = 2_500_000;
+    }
+
+    this.mediaRecorder = new MediaRecorder(stream, recorderOptions);
+
+    this.mediaRecorder.ondataavailable = async (event) => {
+      if (event.data && event.data.size > 0) {
+        const buffer = await event.data.arrayBuffer();
+        this.onChunk?.(buffer);
+      }
+    };
+
+    this.mediaRecorder.onstop = () => {
+      this.onStateChange?.("inactive");
+      this.pendingStop?.();
+      this.pendingStop = undefined;
+    };
+
+    this.mediaRecorder.onpause = () => this.onStateChange?.("paused");
+    this.mediaRecorder.onresume = () => this.onStateChange?.("recording");
+
+    this.mediaRecorder.start(options.chunkIntervalMs ?? 3000);
+    this.onStateChange?.("recording");
   }
 
-  stop(): Blob {
-    if (!this.mediaRecorder) throw new Error("No active recording");
+  stop(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.mediaRecorder || this.mediaRecorder.state === "inactive") {
+        this.cleanup();
+        resolve();
+        return;
+      }
 
-    this.mediaRecorder.stop();
-    this.stream?.getTracks().forEach((track) => track.stop());
+      this.pendingStop = () => {
+        this.cleanup();
+        resolve();
+      };
 
-    const blob = new Blob(this.chunks, { type: this.mediaRecorder.mimeType });
-    this.chunks = [];
-    this.mediaRecorder = null;
-    this.stream = null;
-    return blob;
+      // Request final data chunk before stopping
+      this.mediaRecorder.requestData();
+      this.mediaRecorder.stop();
+    });
   }
 
   pause(): void {
-    this.mediaRecorder?.pause();
+    if (this.mediaRecorder?.state === "recording") {
+      this.mediaRecorder.pause();
+    }
   }
 
   resume(): void {
-    this.mediaRecorder?.resume();
+    if (this.mediaRecorder?.state === "paused") {
+      this.mediaRecorder.resume();
+    }
   }
 
-  getState(): MediaRecorderState {
-    return (this.mediaRecorder?.state ?? "inactive") as MediaRecorderState;
+  getState(): MediaRecorder["state"] {
+    return this.mediaRecorder?.state ?? "inactive";
   }
 
-  private getBestMimeType(): string {
-    const candidates = [
+  getMimeType(): string {
+    return this.mediaRecorder?.mimeType ?? "";
+  }
+
+  getStream(): MediaStream | null {
+    return this.stream;
+  }
+
+  private async buildStream(options: CaptureOptions): Promise<MediaStream> {
+    if (options.mode === "audio-only") {
+      return navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    }
+
+    if (options.mode === "screen") {
+      // Screen capture — Electron exposes this via desktopCapturer-style display-capture
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+
+      if (options.audioEnabled) {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          const tracks = [...screenStream.getTracks(), ...micStream.getAudioTracks()];
+          return new MediaStream(tracks);
+        } catch {
+          // Mic failed — return screen-only
+          return screenStream;
+        }
+      }
+      return screenStream;
+    }
+
+    // Camera mode (default)
+    return navigator.mediaDevices.getUserMedia({
+      video: options.videoEnabled
+        ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
+        : false,
+      audio: options.audioEnabled,
+    });
+  }
+
+  private cleanup(): void {
+    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream = null;
+    this.mediaRecorder = null;
+  }
+
+  private getBestMimeType(videoEnabled: boolean): string {
+    if (!videoEnabled) {
+      const audioCandidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+      return audioCandidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "audio/webm";
+    }
+    const videoCandidates = [
       "video/webm;codecs=vp9,opus",
       "video/webm;codecs=vp8,opus",
       "video/webm",
-      "video/mp4",
     ];
-    return (
-      candidates.find((type) => MediaRecorder.isTypeSupported(type)) ?? "video/webm"
-    );
+    return videoCandidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
   }
 }
 

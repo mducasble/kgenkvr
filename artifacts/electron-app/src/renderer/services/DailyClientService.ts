@@ -39,7 +39,7 @@ export class DailyClientService {
   // TODO: Replace with @daily-co/daily-js DailyCall instance
   // private callObject: DailyCall | null = null;
 
-  async joinRoom(roomUrl: string, token?: string): Promise<void> {
+  async joinRoom(_roomUrl: string, _token?: string): Promise<void> {
     if (this.callState !== "idle") {
       throw new Error(`Cannot join room in state: ${this.callState}`);
     }
@@ -68,12 +68,12 @@ export class DailyClientService {
     this.callState = "idle";
   }
 
-  async setAudioEnabled(enabled: boolean): Promise<void> {
+  async setAudioEnabled(_enabled: boolean): Promise<void> {
     // TODO: this.callObject?.setLocalAudio(enabled)
     throw new Error("DailyClientService.setAudioEnabled not implemented");
   }
 
-  async setVideoEnabled(enabled: boolean): Promise<void> {
+  async setVideoEnabled(_enabled: boolean): Promise<void> {
     // TODO: this.callObject?.setLocalVideo(enabled)
     throw new Error("DailyClientService.setVideoEnabled not implemented");
   }

@@ -1,13 +1,15 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC_CHANNELS } from "../shared/ipc/channels";
+import { IPC_CHANNELS, IPC_EVENTS } from "../shared/ipc/channels";
 import type {
   LoginCredentials,
   CreateSessionPayload,
   JoinSessionPayload,
+  SessionMetadata,
   RecordingStartPayload,
   EnqueueUploadPayload,
   FfmpegProcessPayload,
   StartTranscriptionPayload,
+  TranscriptionResult,
 } from "../shared/types";
 
 const electronAPI = {
@@ -31,6 +33,12 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.SESSION.LIST),
     get: (sessionId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.SESSION.GET, sessionId),
+    save: (metadata: SessionMetadata) =>
+      ipcRenderer.invoke(IPC_CHANNELS.SESSION.SAVE, metadata),
+    loadAll: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.SESSION.LOAD_ALL),
+    delete: (sessionId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.SESSION.DELETE, sessionId),
   },
 
   recording: {
@@ -48,6 +56,10 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.RECORDING.LIST_LOCAL),
     deleteLocal: (recordingId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.RECORDING.DELETE_LOCAL, recordingId),
+    writeChunk: (recordingId: string, chunk: ArrayBuffer) =>
+      ipcRenderer.invoke(IPC_CHANNELS.RECORDING.WRITE_CHUNK, recordingId, chunk),
+    finalize: (recordingId: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.RECORDING.FINALIZE, recordingId),
   },
 
   upload: {
@@ -77,6 +89,8 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.TRANSCRIPTION.GET_STATUS, jobId),
     getResult: (recordingId: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.TRANSCRIPTION.GET_RESULT, recordingId),
+    save: (result: TranscriptionResult) =>
+      ipcRenderer.invoke(IPC_CHANNELS.TRANSCRIPTION.SAVE, result),
   },
 
   system: {
@@ -84,6 +98,8 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.GET_APP_VERSION),
     getPlatform: () =>
       ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.GET_PLATFORM),
+    getUserDataPath: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.GET_USER_DATA_PATH),
     openExternal: (url: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, url),
     showSaveDialog: (options: Electron.SaveDialogOptions) =>
@@ -93,11 +109,11 @@ const electronAPI = {
   },
 
   on: (channel: string, callback: (...args: unknown[]) => void) => {
-    const allowedChannels = [
-      "recording:progress",
-      "upload:progress",
-      "ffmpeg:progress",
-      "transcription:progress",
+    const allowedChannels: string[] = [
+      IPC_EVENTS.UPLOAD_PROGRESS,
+      IPC_EVENTS.FFMPEG_PROGRESS,
+      IPC_EVENTS.TRANSCRIPTION_PROGRESS,
+      IPC_EVENTS.RECORDING_CHUNK_WRITTEN,
     ];
     if (allowedChannels.includes(channel)) {
       ipcRenderer.on(channel, (_event, ...args) => callback(...args));

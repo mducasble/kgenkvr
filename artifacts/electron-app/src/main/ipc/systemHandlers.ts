@@ -12,6 +12,10 @@ export function registerSystemHandlers(ipcMain: IpcMain): void {
     return { success: true, data: process.platform };
   });
 
+  ipcMain.handle(IPC_CHANNELS.SYSTEM.GET_USER_DATA_PATH, async (): Promise<IpcResponse<string>> => {
+    return { success: true, data: app.getPath("userData") };
+  });
+
   ipcMain.handle(IPC_CHANNELS.SYSTEM.OPEN_EXTERNAL, async (_event, url: string): Promise<IpcResponse> => {
     try {
       const parsedUrl = new URL(url);

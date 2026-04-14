@@ -7,7 +7,11 @@ import { registerUploadHandlers } from "./ipc/uploadHandlers";
 import { registerFfmpegHandlers } from "./ipc/ffmpegHandlers";
 import { registerTranscriptionHandlers } from "./ipc/transcriptionHandlers";
 import { registerSystemHandlers } from "./ipc/systemHandlers";
-import { IPC_CHANNELS } from "../shared/ipc/channels";
+import { SessionPersistenceService } from "./services/SessionPersistenceService";
+import { RecordingService } from "./services/RecordingService";
+import { FfmpegService } from "./services/FfmpegService";
+import { ElevenLabsService } from "./services/ElevenLabsService";
+import { UploadQueueService } from "./services/UploadQueueService";
 import log from "electron-log";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -16,6 +20,13 @@ log.transports.file.level = "debug";
 log.transports.console.level = isDev ? "debug" : "info";
 
 let mainWindow: BrowserWindow | null = null;
+
+// Instantiate services once at app startup
+const persistence = new SessionPersistenceService();
+const recordingService = new RecordingService(persistence);
+const ffmpegService = new FfmpegService();
+const elevenLabsService = new ElevenLabsService(process.env.ELEVENLABS_API_KEY);
+const uploadService = new UploadQueueService();
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -43,12 +54,24 @@ function createWindow(): void {
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
 
+  // Allow camera, microphone, and screen capture permissions
+  mainWindow.webContents.session.setPermissionRequestHandler(
+    (_webContents, permission, callback) => {
+      const allowed = ["media", "mediaKeySystem", "geolocation", "display-capture"];
+      callback(allowed.includes(permission));
+    }
+  );
+
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
     log.info("Main window shown");
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Allow Daily.co URLs to open (needed for iframe permissions)
+    if (url.includes("daily.co")) {
+      return { action: "allow" };
+    }
     shell.openExternal(url);
     return { action: "deny" };
   });
@@ -62,12 +85,13 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   createWindow();
+
   registerAuthHandlers(ipcMain);
-  registerSessionHandlers(ipcMain);
-  registerRecordingHandlers(ipcMain);
-  registerUploadHandlers(ipcMain);
-  registerFfmpegHandlers(ipcMain);
-  registerTranscriptionHandlers(ipcMain);
+  registerSessionHandlers(ipcMain, persistence);
+  registerRecordingHandlers(ipcMain, recordingService, persistence);
+  registerUploadHandlers(ipcMain, uploadService);
+  registerFfmpegHandlers(ipcMain, ffmpegService);
+  registerTranscriptionHandlers(ipcMain, elevenLabsService, persistence);
   registerSystemHandlers(ipcMain);
 
   app.on("activate", () => {
@@ -95,10 +119,16 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 app.on("web-contents-created", (_event, contents) => {
-  contents.on("will-navigate", (event, _navigationUrl) => {
+  contents.on("will-navigate", (event, navigationUrl) => {
+    // Allow navigation within Daily.co iframe
+    if (navigationUrl.includes("daily.co")) return;
     event.preventDefault();
   });
-  contents.setWindowOpenHandler(() => ({ action: "deny" }));
+  // Allow Daily.co to open in its own frame
+  contents.setWindowOpenHandler(({ url }) => {
+    if (url.includes("daily.co")) return { action: "allow" };
+    return { action: "deny" };
+  });
 });
 
 export { mainWindow };

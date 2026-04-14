@@ -15,6 +15,7 @@ export interface SessionParticipant {
   isMuted: boolean;
   isCameraOff: boolean;
   joinedAt: string;
+  leftAt?: string;
 }
 
 export interface SessionConfig {
@@ -25,6 +26,7 @@ export interface SessionConfig {
   transcriptionEnabled: boolean;
   autoUpload: boolean;
   dailyRoomName?: string;
+  dailyRoomUrl?: string;
   scheduledAt?: string;
 }
 
@@ -37,10 +39,21 @@ export interface Session {
   participants: SessionParticipant[];
   hostId: string;
   dailyRoomUrl?: string;
+  recordingId?: string;
   startedAt?: string;
   endedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SessionMetadata {
+  session: Session;
+  recordingFilePath?: string;
+  audioFilePath?: string;
+  transcriptionFilePath?: string;
+  sessionFolderPath: string;
+  totalDurationSeconds?: number;
+  fileSizeBytes?: number;
 }
 
 export interface CreateSessionPayload {
@@ -52,4 +65,5 @@ export interface CreateSessionPayload {
 export interface JoinSessionPayload {
   sessionId: string;
   roomUrl?: string;
+  displayName?: string;
 }

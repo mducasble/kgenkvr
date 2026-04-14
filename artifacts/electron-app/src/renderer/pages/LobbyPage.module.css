@@ -2,16 +2,18 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--color-bg);
+  background: #0a0a0a;
+  color: #e0e0e0;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 32px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  padding: 14px 24px;
+  background: rgba(12, 12, 12, 0.97);
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
 }
 
 .brand {
@@ -21,13 +23,14 @@
 }
 
 .brandIcon {
-  color: var(--color-accent);
-  font-size: 16px;
+  color: #e03c4a;
+  font-size: 10px;
 }
 
 .brandName {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 800;
+  color: #f0f0f0;
   letter-spacing: -0.02em;
 }
 
@@ -39,160 +42,304 @@
 
 .userName {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: #555;
 }
+
+.logoutBtn {
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: #555;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.logoutBtn:hover { border-color: #444; color: #aaa; }
 
 .main {
   flex: 1;
-  max-width: 900px;
+  max-width: 760px;
   width: 100%;
   margin: 0 auto;
-  padding: 48px 32px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
+/* ── Hero ── */
 .hero {
-  margin-bottom: 40px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .heroTitle {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
+  color: #f0f0f0;
+  margin: 0;
   letter-spacing: -0.03em;
-  margin-bottom: 8px;
 }
 
 .heroSubtitle {
-  font-size: 14px;
-  color: var(--color-text-muted);
-  margin-bottom: 24px;
+  font-size: 13px;
+  color: #444;
+  margin: 0;
 }
 
-.primaryButton {
-  background: var(--color-accent);
+.newButton {
+  background: #e03c4a;
   color: #fff;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 8px;
   padding: 10px 20px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: background 0.15s;
 }
 
-.primaryButton:hover {
-  background: var(--color-accent-hover);
-}
+.newButton:hover { background: #c4323f; }
 
-.sessionList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ── States ── */
+.loadingState {
+  font-size: 13px;
+  color: #444;
+  text-align: center;
+  padding: 40px;
 }
 
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 64px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  text-align: center;
+  gap: 10px;
+  padding: 60px 40px;
 }
 
-.emptyIcon {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
+.emptyIcon { font-size: 40px; opacity: 0.2; }
 
 .emptyTitle {
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 6px;
+  color: #444;
 }
 
-.emptyText {
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
+.emptyText { font-size: 13px; color: #333; }
 
-.sessionCard {
+/* ── Section ── */
+.section {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: border-color 0.15s;
-}
-
-.sessionCard:hover {
-  border-color: var(--color-accent);
-}
-
-.sessionInfo {
-  flex: 1;
-}
-
-.sessionTitle {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.sessionDesc {
-  font-size: 13px;
-  color: var(--color-text-muted);
-  margin-bottom: 8px;
-}
-
-.sessionMeta {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
 }
 
-.statusBadge {
+.sectionHeading {
   font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 100px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--color-surface-2);
-  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  color: #3a3a3a;
+  margin: 0;
 }
 
-.status_active {
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--color-success);
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.status_recording {
-  background: rgba(224, 60, 74, 0.15);
-  color: var(--color-accent);
+/* ── Card ── */
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #0f0f0f;
+  border: 1px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.15s;
 }
 
-.sessionDate {
+.card:hover { border-color: #252525; }
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cardIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.cardInfo {
+  min-width: 0;
+  flex: 1;
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardDesc {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: #444;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.joinButton {
-  background: var(--color-surface-2);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.15s;
-  margin-left: 16px;
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.metaText {
+  font-size: 11px;
+  color: #3a3a3a;
+}
+
+.metaDot { color: #2a2a2a; }
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge_idle { background: #1a1a1a; color: #555; }
+.badge_active { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.badge_recording { background: rgba(224, 60, 74, 0.15); color: #e03c4a; }
+.badge_ended { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
+.badge_error { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.badge_joining { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+
+.filePath {
+  font-size: 10px;
+  font-family: monospace;
+  color: #2e2e2e;
+  margin: 3px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+
+.transcribedBadge {
+  font-size: 10px;
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-weight: 600;
+}
+
+/* ── Actions ── */
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.joinButton:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+.openButton {
+  background: #1e1e1e;
+  border: 1px solid #2e2e2e;
+  color: #aaa;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
 }
+
+.openButton:hover { border-color: #444; color: #f0f0f0; }
+
+.reviewButton {
+  background: #3b82f6;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+
+.reviewButton:hover { background: #2563eb; }
+
+.deleteBtn {
+  background: none;
+  border: 1px solid transparent;
+  color: #333;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.deleteBtn:hover { border-color: #ef4444; color: #ef4444; }
+
+.deleteConfirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #888;
+}
+
+.deleteYes {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.deleteYes:hover { background: rgba(239, 68, 68, 0.25); }
+
+.deleteNo {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #666;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.deleteNo:hover { border-color: #444; color: #aaa; }
