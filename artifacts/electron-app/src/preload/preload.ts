@@ -93,6 +93,25 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.TRANSCRIPTION.SAVE, result),
   },
 
+  daily: {
+    createRoom: (options: {
+      name?: string;
+      privacy?: "public" | "private";
+      maxParticipants?: number;
+      expiresInSeconds?: number;
+      enableRecording?: boolean;
+    }) => ipcRenderer.invoke(IPC_CHANNELS.DAILY.CREATE_ROOM, options),
+    deleteRoom: (roomName: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DAILY.DELETE_ROOM, roomName),
+    createToken: (options: {
+      roomName: string;
+      userId: string;
+      displayName: string;
+      isOwner?: boolean;
+      expiresInSeconds?: number;
+    }) => ipcRenderer.invoke(IPC_CHANNELS.DAILY.CREATE_TOKEN, options),
+  },
+
   system: {
     getAppVersion: () =>
       ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.GET_APP_VERSION),

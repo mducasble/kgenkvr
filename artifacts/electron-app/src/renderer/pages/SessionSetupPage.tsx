@@ -21,20 +21,39 @@ export function SessionSetupPage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dailyRoomUrl, setDailyRoomUrl] = useState("");
   const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [loadingStep, setLoadingStep] = useState("");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
+      // 1. Create Daily.co room automatically
+      setLoadingStep("Criando sala Daily.co…");
+      const roomRes = await api.daily.createRoom({
+        maxParticipants: config.maxParticipants,
+        expiresInSeconds: 60 * 60 * 4, // 4 hours
+        enableRecording: false,
+      });
+
+      const dailyRoomUrl = roomRes.success && roomRes.data
+        ? (roomRes.data as { url: string }).url
+        : undefined;
+
+      if (!roomRes.success) {
+        // Daily.co not configured — continue without video call
+        setError(`Daily.co: ${roomRes.error ?? "não configurado"} — sessão criada sem chamada de vídeo.`);
+      }
+
+      // 2. Create session metadata
+      setLoadingStep("Criando sessão…");
       const result = await api.session.create({
         title,
         description: description || undefined,
         config: {
           ...config,
-          dailyRoomUrl: dailyRoomUrl.trim() || undefined,
+          dailyRoomUrl,
         },
       });
       if (!result.success || !result.data) {
@@ -43,10 +62,10 @@ export function SessionSetupPage() {
       addSession(result.data);
       setActiveSession(result.data);
 
-      // Join immediately
+      // 3. Join session
       const joinRes = await api.session.join({
         sessionId: result.data.id,
-        roomUrl: dailyRoomUrl.trim() || undefined,
+        roomUrl: dailyRoomUrl,
         displayName: "You",
       });
       if (joinRes.success && joinRes.data) {
@@ -58,6 +77,7 @@ export function SessionSetupPage() {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+      setLoadingStep("");
     }
   };
 
@@ -111,25 +131,13 @@ export function SessionSetupPage() {
             </div>
           </section>
 
-          {/* Daily.co */}
+          {/* Daily.co — automatic */}
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Daily.co Room (optional)</h2>
+            <h2 className={styles.sectionTitle}>Videochamada Daily.co</h2>
             <p className={styles.sectionHint}>
-              Paste a Daily.co room URL to embed the live call. Leave blank for local-only recording.
+              Uma sala privada será criada automaticamente via API ao iniciar a sessão.
+              O link será incorporado na tela de gravação.
             </p>
-            <div className={styles.field}>
-              <label htmlFor="dailyUrl" className={styles.label}>
-                Room URL
-              </label>
-              <input
-                id="dailyUrl"
-                type="url"
-                className={styles.input}
-                value={dailyRoomUrl}
-                onChange={(e) => setDailyRoomUrl(e.target.value)}
-                placeholder="https://yourteam.daily.co/room-name"
-              />
-            </div>
           </section>
 
           {/* Options */}
@@ -173,7 +181,7 @@ export function SessionSetupPage() {
               Cancel
             </button>
             <button type="submit" className={styles.submitButton} disabled={isLoading || !title.trim()}>
-              {isLoading ? "Creating..." : "Start Session"}
+              {isLoading ? (loadingStep || "Aguarde…") : "Iniciar Sessão"}
             </button>
           </div>
         </form>

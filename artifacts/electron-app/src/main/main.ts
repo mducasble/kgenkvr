@@ -7,11 +7,13 @@ import { registerUploadHandlers } from "./ipc/uploadHandlers";
 import { registerFfmpegHandlers } from "./ipc/ffmpegHandlers";
 import { registerTranscriptionHandlers } from "./ipc/transcriptionHandlers";
 import { registerSystemHandlers } from "./ipc/systemHandlers";
+import { registerDailyHandlers } from "./ipc/dailyHandlers";
 import { SessionPersistenceService } from "./services/SessionPersistenceService";
 import { RecordingService } from "./services/RecordingService";
 import { FfmpegService } from "./services/FfmpegService";
 import { ElevenLabsService } from "./services/ElevenLabsService";
 import { UploadQueueService } from "./services/UploadQueueService";
+import { DailyService } from "./services/DailyService";
 import log from "electron-log";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -27,6 +29,13 @@ const recordingService = new RecordingService(persistence);
 const ffmpegService = new FfmpegService();
 const elevenLabsService = new ElevenLabsService(process.env.ELEVENLABS_API_KEY);
 const uploadService = new UploadQueueService();
+const dailyService =
+  process.env.DAILY_API_KEY && process.env.DAILY_DOMAIN
+    ? new DailyService(process.env.DAILY_API_KEY, process.env.DAILY_DOMAIN)
+    : null;
+if (!dailyService) {
+  log.warn("Daily.co não configurado — defina DAILY_API_KEY e DAILY_DOMAIN para criar salas automaticamente.");
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -92,6 +101,7 @@ app.whenReady().then(() => {
   registerUploadHandlers(ipcMain, uploadService);
   registerFfmpegHandlers(ipcMain, ffmpegService);
   registerTranscriptionHandlers(ipcMain, elevenLabsService, persistence);
+  registerDailyHandlers(ipcMain, dailyService);
   registerSystemHandlers(ipcMain);
 
   app.on("activate", () => {

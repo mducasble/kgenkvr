@@ -505,6 +505,28 @@ export const browserMockAPI = {
     },
   },
 
+  daily: {
+    createRoom: async (options?: { name?: string; maxParticipants?: number; expiresInSeconds?: number; enableRecording?: boolean }) => {
+      const roomName = options?.name ?? `mock-room-${Date.now()}`;
+      return {
+        success: true,
+        data: {
+          id: `room_${roomName}`,
+          name: roomName,
+          url: `https://preview.daily.co/${roomName}`,
+          privacy: "private",
+          config: { max_participants: options?.maxParticipants ?? 2 },
+          created_at: new Date().toISOString(),
+        },
+      };
+    },
+    deleteRoom: async (_roomName: string) => ({ success: true }),
+    createToken: async (_options: unknown) => ({
+      success: true,
+      data: { token: "mock-meeting-token" },
+    }),
+  },
+
   system: {
     getAppVersion: async () => ({ success: true, data: "1.0.0-browser-preview" }),
     getPlatform: async () => ({ success: true, data: "browser" }),

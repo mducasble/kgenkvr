@@ -55,33 +55,54 @@ export class DailyService {
   }): Promise<DailyRoom> {
     log.info("DailyService.createRoom", options);
 
-    // TODO: Implement real Daily.co room creation
-    // const response = await fetch(`${this.baseUrl}/rooms`, {
-    //   method: "POST",
-    //   headers: this.headers,
-    //   body: JSON.stringify({
-    //     name: options.name,
-    //     privacy: options.privacy ?? "private",
-    //     properties: {
-    //       max_participants: options.maxParticipants,
-    //       exp: options.expiresInSeconds
-    //         ? Math.floor(Date.now() / 1000) + options.expiresInSeconds
-    //         : undefined,
-    //       enable_recording: options.enableRecording ? "local" : undefined,
-    //     },
-    //   }),
-    // });
-    // if (!response.ok) throw new Error(`Daily.co API error: ${response.statusText}`);
-    // return response.json();
+    const properties: Record<string, unknown> = {
+      max_participants: options.maxParticipants ?? 2,
+      enable_chat: true,
+      enable_screenshare: false,
+      start_video_off: false,
+      start_audio_off: false,
+    };
+    if (options.expiresInSeconds) {
+      properties.exp = Math.floor(Date.now() / 1000) + options.expiresInSeconds;
+    }
+    if (options.enableRecording) {
+      properties.enable_recording = "local";
+    }
 
-    throw new Error("DailyService.createRoom not implemented");
+    const body: Record<string, unknown> = {
+      privacy: options.privacy ?? "private",
+      properties,
+    };
+    if (options.name) body.name = options.name;
+
+    const response = await fetch(`${this.baseUrl}/rooms`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Daily.co API error (${response.status}): ${text}`);
+    }
+
+    const room = await response.json() as DailyRoom;
+    log.info("DailyService.createRoom success", { name: room.name, url: room.url });
+    return room;
   }
 
   async deleteRoom(roomName: string): Promise<void> {
     log.info("DailyService.deleteRoom", roomName);
 
-    // TODO: DELETE /rooms/:name
-    throw new Error("DailyService.deleteRoom not implemented");
+    const response = await fetch(`${this.baseUrl}/rooms/${roomName}`, {
+      method: "DELETE",
+      headers: this.headers,
+    });
+
+    if (!response.ok && response.status !== 404) {
+      const text = await response.text();
+      throw new Error(`Daily.co API error (${response.status}): ${text}`);
+    }
   }
 
   async createMeetingToken(options: {
@@ -96,26 +117,28 @@ export class DailyService {
       userId: options.userId,
     });
 
-    // TODO: POST /meeting-tokens
-    // const response = await fetch(`${this.baseUrl}/meeting-tokens`, {
-    //   method: "POST",
-    //   headers: this.headers,
-    //   body: JSON.stringify({
-    //     properties: {
-    //       room_name: options.roomName,
-    //       user_id: options.userId,
-    //       user_name: options.displayName,
-    //       is_owner: options.isOwner ?? false,
-    //       exp: options.expiresInSeconds
-    //         ? Math.floor(Date.now() / 1000) + options.expiresInSeconds
-    //         : undefined,
-    //     },
-    //   }),
-    // });
-    // if (!response.ok) throw new Error(`Daily.co API error: ${response.statusText}`);
-    // return response.json();
+    const properties: Record<string, unknown> = {
+      room_name: options.roomName,
+      user_id: options.userId,
+      user_name: options.displayName,
+      is_owner: options.isOwner ?? false,
+    };
+    if (options.expiresInSeconds) {
+      properties.exp = Math.floor(Date.now() / 1000) + options.expiresInSeconds;
+    }
 
-    throw new Error("DailyService.createMeetingToken not implemented");
+    const response = await fetch(`${this.baseUrl}/meeting-tokens`, {
+      method: "POST",
+      headers: this.headers,
+      body: JSON.stringify({ properties }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Daily.co API error (${response.status}): ${text}`);
+    }
+
+    return response.json() as Promise<DailyMeetingToken>;
   }
 
   getRoomUrl(roomName: string): string {

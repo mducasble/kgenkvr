@@ -42,6 +42,11 @@ export const IPC_CHANNELS = {
     GET_RESULT: "transcription:get-result",
     SAVE: "transcription:save",
   },
+  DAILY: {
+    CREATE_ROOM: "daily:create-room",
+    DELETE_ROOM: "daily:delete-room",
+    CREATE_TOKEN: "daily:create-token",
+  },
   SYSTEM: {
     GET_APP_VERSION: "system:get-app-version",
     GET_PLATFORM: "system:get-platform",
@@ -59,6 +64,7 @@ export type IpcChannel =
   | (typeof IPC_CHANNELS.UPLOAD)[keyof typeof IPC_CHANNELS.UPLOAD]
   | (typeof IPC_CHANNELS.FFMPEG)[keyof typeof IPC_CHANNELS.FFMPEG]
   | (typeof IPC_CHANNELS.TRANSCRIPTION)[keyof typeof IPC_CHANNELS.TRANSCRIPTION]
+  | (typeof IPC_CHANNELS.DAILY)[keyof typeof IPC_CHANNELS.DAILY]
   | (typeof IPC_CHANNELS.SYSTEM)[keyof typeof IPC_CHANNELS.SYSTEM];
 
 export const IPC_EVENTS = {
