@@ -1,3 +1,8 @@
+// Load .env first — use require so it runs before any other module initialises
+// __dirname in compiled output = dist/main/ → ../../.env = app root
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
+
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
 import { registerAuthHandlers } from "./ipc/authHandlers";
