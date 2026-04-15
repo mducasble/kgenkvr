@@ -49,11 +49,17 @@ export function RecordingPage() {
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Load session metadata
+  // Load session metadata — auto-join Daily.co room if one exists
   useEffect(() => {
     if (!sessionId) return;
     api.session.get(sessionId).then((res) => {
-      if (res.success && res.data) setSession(res.data);
+      if (res.success && res.data) {
+        setSession(res.data);
+        // Auto-join: no manual button click needed when room URL is already set
+        if (res.data.dailyRoomUrl) {
+          setHasJoined(true);
+        }
+      }
     });
   }, [api, sessionId]);
 

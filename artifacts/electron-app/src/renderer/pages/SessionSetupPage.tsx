@@ -37,14 +37,14 @@ export function SessionSetupPage() {
         enableRecording: false,
       });
 
-      const dailyRoomUrl = roomRes.success && roomRes.data
-        ? (roomRes.data as { url: string }).url
-        : undefined;
-
       if (!roomRes.success) {
-        // Daily.co not configured — continue without video call
-        setError(`Daily.co: ${roomRes.error ?? "não configurado"} — sessão criada sem chamada de vídeo.`);
+        throw new Error(
+          `Não foi possível criar a sala Daily.co: ${roomRes.error ?? "credenciais não configuradas"}.\n` +
+          `Verifique DAILY_API_KEY e DAILY_DOMAIN no arquivo .env e reinicie o app.`
+        );
       }
+
+      const dailyRoomUrl = (roomRes.data as { url: string }).url;
 
       // 2. Create session metadata
       setLoadingStep("Criando sessão…");
