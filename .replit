@@ -56,3 +56,5 @@ externalPort = 80
 
 [userenv.shared]
 DAILY_DOMAIN = "kgenquest"
+AWS_S3_BUCKET = "kaivideo"
+AWS_REGION = "us-east-1"

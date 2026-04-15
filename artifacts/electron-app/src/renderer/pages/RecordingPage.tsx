@@ -204,22 +204,24 @@ export function RecordingPage() {
             </div>
           ) : (
             <div className={styles.localOnlyView}>
-              {/* Local camera preview when no Daily room or not yet joined */}
-              <video
-                ref={localVideoRef}
-                className={`${styles.localVideoFull} ${isCameraOff ? styles.localVideoOff : ""}`}
-                autoPlay
-                muted
-                playsInline
-              />
-              {isCameraOff && (
-                <div className={styles.cameraOffOverlay}>
-                  <span>Camera off</span>
-                </div>
-              )}
+              {/* 16:9 constrained box */}
+              <div className={styles.videoBox16x9}>
+                <video
+                  ref={localVideoRef}
+                  className={`${styles.localVideoFull} ${isCameraOff ? styles.localVideoOff : ""}`}
+                  autoPlay
+                  muted
+                  playsInline
+                />
+                {isCameraOff && (
+                  <div className={styles.cameraOffOverlay}>
+                    <span>Camera desligada</span>
+                  </div>
+                )}
+              </div>
               {!dailyRoomUrl && (
                 <div className={styles.noRoomHint}>
-                  <span>No Daily.co room URL — local recording only</span>
+                  <span>Sem sala Daily.co — gravação local apenas</span>
                 </div>
               )}
               {dailyRoomUrl && !hasJoined && (
@@ -231,7 +233,7 @@ export function RecordingPage() {
                     onClick={handleJoin}
                     disabled={isJoining}
                   >
-                    {isJoining ? "Joining..." : "Join Call"}
+                    {isJoining ? "Entrando..." : "Entrar na Chamada"}
                   </button>
                 </div>
               )}
