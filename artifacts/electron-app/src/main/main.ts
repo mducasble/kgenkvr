@@ -1,24 +1,14 @@
-// Load .env first — try several candidate paths for robustness across OSes and working directories
+// Load .env using app.getAppPath() — always points to the folder containing package.json
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const _dotenv = require("dotenv");
+const _appPath: string = require("electron").app.getAppPath();
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const _path = require("path");
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const _fs = require("fs");
-{
-  const candidates: string[] = [
-    _path.resolve(__dirname, "../../.env"),          // dist/main/ → app root
-    _path.resolve(__dirname, "../../../.env"),       // extra nesting fallback
-    _path.resolve(process.cwd(), ".env"),            // current working dir
-    _path.resolve(process.cwd(), "artifacts/electron-app/.env"), // monorepo root cwd
-  ];
-  const found = candidates.find((p: string) => _fs.existsSync(p));
-  if (found) {
-    _dotenv.config({ path: found });
-    // log will be available only after imports — store for later
-    (global as Record<string, unknown>).__dotenvPath = found;
-  }
-}
+const _dotenvResult = require("dotenv").config({
+  path: require("path").resolve(_appPath, ".env"),
+});
+(global as Record<string, unknown>).__dotenvPath =
+  _dotenvResult.error ? null : require("path").resolve(_appPath, ".env");
+(global as Record<string, unknown>).__dotenvError =
+  _dotenvResult.error?.message ?? null;
 
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
@@ -44,13 +34,16 @@ log.transports.file.level = "debug";
 log.transports.console.level = isDev ? "debug" : "info";
 
 // Report dotenv status now that logger is ready
-const _dotenvPathUsed = (global as Record<string, unknown>).__dotenvPath as string | undefined;
+const _dotenvPathUsed = (global as Record<string, unknown>).__dotenvPath as string | null;
+const _dotenvErr = (global as Record<string, unknown>).__dotenvError as string | null;
 if (_dotenvPathUsed) {
   log.info(`[dotenv] loaded from: ${_dotenvPathUsed}`);
 } else {
-  log.warn("[dotenv] .env file NOT found — using system environment variables only");
+  log.warn(`[dotenv] .env NOT loaded (app root: ${_appPath})`);
+  if (_dotenvErr) log.warn(`[dotenv] reason: ${_dotenvErr}`);
+  log.warn(`[dotenv] expected .env at: ${path.resolve(_appPath, ".env")}`);
 }
-log.info(`[env] DAILY_API_KEY=${process.env.DAILY_API_KEY ? "set" : "MISSING"} DAILY_DOMAIN=${process.env.DAILY_DOMAIN ?? "MISSING"} AWS_S3_BUCKET=${process.env.AWS_S3_BUCKET ?? "MISSING"}`);
+log.info(`[env] DAILY_API_KEY=${process.env.DAILY_API_KEY ? "✓set" : "MISSING"} | DAILY_DOMAIN=${process.env.DAILY_DOMAIN ?? "MISSING"} | AWS_S3_BUCKET=${process.env.AWS_S3_BUCKET ?? "MISSING"}`);
 
 let mainWindow: BrowserWindow | null = null;
 
