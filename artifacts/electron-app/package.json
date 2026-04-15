@@ -19,14 +19,16 @@
     "pack:all": "electron-builder --mac --win"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1030.0",
+    "@aws-sdk/lib-storage": "^3.1030.0",
     "electron-log": "^5.2.0",
     "electron-store": "^10.0.0"
   },
   "optionalDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "*",
-    "@rollup/rollup-linux-x64-gnu": "*",
+    "@rollup/rollup-darwin-arm64": "*",
     "@rollup/rollup-darwin-x64": "*",
-    "@rollup/rollup-darwin-arm64": "*"
+    "@rollup/rollup-linux-x64-gnu": "*",
+    "@rollup/rollup-win32-x64-msvc": "*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -57,18 +59,26 @@
       "package.json"
     ],
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.utilities",
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "AudioVideo"
     }
   }
